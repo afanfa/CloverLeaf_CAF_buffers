@@ -56,8 +56,6 @@ SUBROUTINE start
 
   ALLOCATE(chunks(1:chunks_per_task))
 
-  write(*,*) this_image(),chunks_per_task
-
   ALLOCATE(left(1:chunks_per_task))
   ALLOCATE(right(1:chunks_per_task))
   ALLOCATE(bottom(1:chunks_per_task))
