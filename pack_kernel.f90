@@ -21,6 +21,10 @@
 
 MODULE pack_kernel_module
 
+  use iso_fortran_env, only : event_type
+
+  type(event_type) :: ev_left_right[*], ev_top_bottom[*]
+
 CONTAINS
 
 SUBROUTINE pack_left_right_buffers(x_min,x_max,y_min,y_max,              &

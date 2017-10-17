@@ -109,7 +109,7 @@ SUBROUTINE clover_decompose(x_cells,y_cells,left,right,bottom,top)
   INTEGER  :: chunk_x,chunk_y,mod_x,mod_y,split_found
 
   INTEGER  :: cx,cy,chunk,add_x,add_y,add_x_prev,add_y_prev
-#ifdef LOCAL_SYNC
+#if defined(LOCAL_SYNC) || defined(EVENTS_SYNC)
   INTEGER :: numNeighbours,n
 #endif
 
@@ -179,7 +179,7 @@ SUBROUTINE clover_decompose(x_cells,y_cells,left,right,bottom,top)
                 IF(cy.EQ.1)       chunks(1)%chunk_neighbours(chunk_bottom)=external_face
                 IF(cy.EQ.chunk_y) chunks(1)%chunk_neighbours(chunk_top)=external_face
 
-#ifdef LOCAL_SYNC
+#if defined(LOCAL_SYNC) || defined(EVENTS_SYNC)
                 numNeighbours=0
                 IF (chunks(1)%chunk_neighbours(chunk_left).NE.external_face) THEN
                     numNeighbours = numNeighbours +1
@@ -508,7 +508,8 @@ SUBROUTINE clover_exchange_message(chunk,field,                            &
                                    depth,field_type)
 
     USE pack_kernel_module
-
+    
+    use iso_fortran_env, only : event_type
     IMPLICIT NONE
 
     REAL(KIND=8) :: field(-1:,-1:) ! This seems to work for any type of mesh data
@@ -520,6 +521,8 @@ SUBROUTINE clover_exchange_message(chunk,field,                            &
     INTEGER      :: size,err,x_inc,y_inc
     INTEGER      :: receiver,sender
     INTEGER      :: left_neighbour_chunk, right_neighbour_chunk, bottom_neighbour_chunk, top_neighbour_chunk
+
+    ! type(event_type),save :: ev_left_right[*], ev_top_bottom[*]
 
     ! Field type will either be cell, vertex, x_face or y_face to get the message limits correct
 
@@ -582,17 +585,27 @@ SUBROUTINE clover_exchange_message(chunk,field,                            &
         IF(chunks(chunk)%chunk_neighbours(chunk_left).NE.external_face) THEN
           receiver=chunks(chunk)%chunk_neighbours(chunk_left)
           right_rcv_buffer(1:size)[receiver] = left_snd_buffer(1:size)
+          event post(ev_left_right[receiver])
         ENDIF
 
         IF(chunks(chunk)%chunk_neighbours(chunk_right).NE.external_face) THEN
           receiver = chunks(chunk)%chunk_neighbours(chunk_right)
           left_rcv_buffer(1:size)[receiver] = right_snd_buffer(1:size)
+          event post(ev_left_right[receiver])
         ENDIF
     ENDIF
 
   ! Wait for the messages
 #ifdef LOCAL_SYNC
     sync images( chunks(chunk)%imageNeighbours )
+#elif EVENTS_SYNC
+    block
+      integer :: size_rcv
+      size_rcv = 1
+      write(*,*) this_image(),chunks(chunk)%imageNeighbours
+      !size_rcv = size(chunks(chunk)%imageNeighbours)
+      event wait(ev_left_right, until_count = size_rcv)
+  end block
 #else
     sync all
 #endif
@@ -644,11 +657,13 @@ SUBROUTINE clover_exchange_message(chunk,field,                            &
         IF(chunks(chunk)%chunk_neighbours(chunk_bottom).NE.external_face) THEN
             receiver=chunks(chunk)%chunk_neighbours(chunk_bottom)
             top_rcv_buffer(1:size)[receiver] = bottom_snd_buffer(1:size)
+            event post(ev_top_bottom[receiver])
         ENDIF
 
         IF(chunks(chunk)%chunk_neighbours(chunk_top).NE.external_face) THEN
             receiver=chunks(chunk)%chunk_neighbours(chunk_top)
             bottom_rcv_buffer(1:size)[receiver] = top_snd_buffer(1:size)
+            event post(ev_top_bottom[receiver])
         ENDIF
     ENDIF
 
@@ -656,6 +671,12 @@ SUBROUTINE clover_exchange_message(chunk,field,                            &
   ! Wait for the messages
 #ifdef LOCAL_SYNC
     sync images( chunks(chunk)%imageNeighbours )
+#elif EVENTS_SYNC
+    block
+      integer :: size_rcv
+      size_rcv = 1!size(chunks(chunk)%imageNeighbours)
+      event wait(ev_top_bottom, until_count = size_rcv)
+    end block
 #else
     sync all
 #endif

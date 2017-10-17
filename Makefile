@@ -77,7 +77,7 @@ OMP=$(OMP_$(COMPILER))
 
 FLAGS_INTEL     = -O3 -no-prec-div
 FLAGS_SUN       = -fast -xipo=2 -Xlistv4
-FLAGS_GNU       = -cpp -fcoarray=lib -O3 -march=native -funroll-loops -L/glade/u/home/elfanfa/Cheyenne/OpenCoarrays/src/mpi -lcaf_mpi
+FLAGS_GNU       = -cpp -DEVENTS_SYNC -fcoarray=lib -O3 -march=native -funroll-loops -L/glade/u/home/elfanfa/Cheyenne/OpenCoarrays/src/mpi -lcaf_mpi
 FLAGS_CRAY      = -em -ra -h acc_model=fast_addr:no_deep_copy:auto_async_all -hcaf -eZ
 FLAGS_PGI       = -fastsse -gopt -Mipa=fast -Mlist
 FLAGS_PATHSCALE = -O3
