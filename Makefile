@@ -77,7 +77,7 @@ OMP=$(OMP_$(COMPILER))
 
 FLAGS_INTEL     = -O3 -no-prec-div
 FLAGS_SUN       = -fast -xipo=2 -Xlistv4
-FLAGS_GNU       = -cpp -DEVENTS_SYNC -fcoarray=lib -O3 -march=native -funroll-loops -L/glade/u/home/elfanfa/Cheyenne/OpenCoarrays/src/mpi -lcaf_mpi
+FLAGS_GNU       = -cpp -DEVENTS_SYNC -fcoarray=lib -O3 -march=native -funroll-loops -L/global/homes/a/afanfa/OpenCoarrays/src/mpi -lcaf_mpi
 FLAGS_CRAY      = -em -ra -h acc_model=fast_addr:no_deep_copy:auto_async_all -hcaf -eZ
 FLAGS_PGI       = -fastsse -gopt -Mipa=fast -Mlist
 FLAGS_PATHSCALE = -O3
@@ -127,8 +127,8 @@ endif
 
 FLAGS=$(FLAGS_$(COMPILER)) $(OMP) $(I3E) $(OPTIONS) $(CAF_SYNC)
 CFLAGS=$(CFLAGS_$(COMPILER)) $(OMP) $(I3E) $(C_OPTIONS) -c
-MPI_COMPILER=mpif90
-C_MPI_COMPILER=mpicc
+MPI_COMPILER=ftn
+C_MPI_COMPILER=cc
 
 clover_leaf: c_lover *.f90 Makefile
 	$(MPI_COMPILER) $(FLAGS)	\
