@@ -600,9 +600,13 @@ SUBROUTINE clover_exchange_message(chunk,field,                            &
 #elif defined(EVENTS_SYNC)
     block
       integer :: size_rcv
-      size_rcv = size(chunks(chunk)%imageNeighbours)
-      !write(*,*) this_image(),chunks(chunk)%imageNeighbours
-      !size_rcv = size(chunks(chunk)%imageNeighbours)
+      size_rcv = 0
+      if(chunks(chunk)%chunk_neighbours(chunk_left).NE.external_face) then
+         size_rcv = size_rcv + 1
+      endif
+      if(chunks(chunk)%chunk_neighbours(chunk_right).NE.external_face) then
+         size_rcv = size_rcv + 1
+      endif
       event wait(ev_left_right, until_count = size_rcv)
     end block
 #else
@@ -673,13 +677,18 @@ SUBROUTINE clover_exchange_message(chunk,field,                            &
 #elif defined(EVENTS_SYNC)
     block
       integer :: size_rcv
-      size_rcv = 1!size(chunks(chunk)%imageNeighbours)
+      size_rcv = 0
+      if(chunks(chunk)%chunk_neighbours(chunk_top).NE.external_face) then
+         size_rcv = size_rcv + 1
+      endif
+      if(chunks(chunk)%chunk_neighbours(chunk_bottom).NE.external_face) then
+         size_rcv = size_rcv + 1
+      endif
       event wait(ev_top_bottom, until_count = size_rcv)
     end block
 #else
     sync all
 #endif
-
 
     ! Unpack buffers in halo cells
     IF(parallel%task.EQ.chunks(chunk)%task) THEN
@@ -704,6 +713,8 @@ SUBROUTINE clover_exchange_message(chunk,field,                            &
             ENDIF
         ENDIF
     ENDIF
+
+    sync all
 
 END SUBROUTINE clover_exchange_message
 
