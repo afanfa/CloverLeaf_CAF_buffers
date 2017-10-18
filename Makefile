@@ -77,7 +77,7 @@ OMP=$(OMP_$(COMPILER))
 
 FLAGS_INTEL     = -O3 -no-prec-div
 FLAGS_SUN       = -fast -xipo=2 -Xlistv4
-FLAGS_GNU       = -cpp -DEVENTS_SYNC -fcoarray=lib -O3 -march=native -funroll-loops -L/global/homes/a/afanfa/OpenCoarrays/src/mpi -lcaf_mpi
+FLAGS_GNU       = -cpp -DEVENTS_SYNC -fcoarray=lib -O3 -march=native -funroll-loops -L/global/homes/a/afanfa/OpenCoarrays-notified/src/mpi -lcaf_mpi -L/global/homes/a/afanfa/fompi-na/ $(CRAY_DMAPP_POST_LINK_OPTS)
 FLAGS_CRAY      = -em -ra -h acc_model=fast_addr:no_deep_copy:auto_async_all -hcaf -eZ
 FLAGS_PGI       = -fastsse -gopt -Mipa=fast -Mlist
 FLAGS_PATHSCALE = -O3
@@ -192,7 +192,7 @@ clover_leaf: c_lover *.f90 Makefile
 	pack_kernel_c.o			\
 	generate_chunk_kernel_c.o	\
 	initialise_chunk_kernel_c.o	\
-	-o clover_leaf -lcaf_mpi; echo $(MESSAGE)
+	-o clover_leaf -lcaf_mpi -lfompi -ldmapp; echo $(MESSAGE)
 
 c_lover: *.c Makefile
 	$(C_MPI_COMPILER) $(CFLAGS)     \
