@@ -237,6 +237,7 @@ END SUBROUTINE clover_decompose
 
 SUBROUTINE clover_allocate_buffers(chunk)
 
+  use pack_kernel_module
   IMPLICIT NONE
 
   INTEGER      :: chunk
@@ -249,22 +250,26 @@ SUBROUTINE clover_allocate_buffers(chunk)
       ! ALLOCATE(chunks(chunk)%left_rcv_buffer(2*(chunks(chunk)%field%y_max+5)))
      ALLOCATE(left_snd_buffer(2*(chunks(chunk)%field%y_max+5)))
      ALLOCATE(left_rcv_buffer(2*(chunks(chunk)%field%y_max+5))[*])
+     event attach(ev_left,left_rcv_buffer)
     !ENDIF
     !IF(chunks(chunk)%chunk_neighbours(chunk_right).NE.external_face) THEN
       ! ALLOCATE(chunks(chunk)%right_snd_buffer(2*(chunks(chunk)%field%y_max+5)))
       ! ALLOCATE(chunks(chunk)%right_rcv_buffer(2*(chunks(chunk)%field%y_max+5)))
       ALLOCATE(right_snd_buffer(2*(chunks(chunk)%field%y_max+5)))
       ALLOCATE(right_rcv_buffer(2*(chunks(chunk)%field%y_max+5))[*])
+      event attach(ev_right,right_rcv_buffer)
     !ENDIF
     !IF(chunks(chunk)%chunk_neighbours(chunk_bottom).NE.external_face) THEN
       ! ALLOCATE(chunks(chunk)%bottom_snd_buffer(2*(chunks(chunk)%field%x_max+5)))
       ! ALLOCATE(chunks(chunk)%bottom_rcv_buffer(2*(chunks(chunk)%field%x_max+5)))
       ALLOCATE(bottom_snd_buffer(2*(chunks(chunk)%field%x_max+5)))
       ALLOCATE(bottom_rcv_buffer(2*(chunks(chunk)%field%x_max+5))[*])
+      event attach(ev_bottom,bottom_rcv_buffer)
     !ENDIF
     !IF(chunks(chunk)%chunk_neighbours(chunk_top).NE.external_face) THEN
       ALLOCATE(top_snd_buffer(2*(chunks(chunk)%field%x_max+5)))
       ALLOCATE(top_rcv_buffer(2*(chunks(chunk)%field%x_max+5))[*])
+      event attach(ev_top,top_rcv_buffer)
       ! ALLOCATE(chunks(chunk)%top_snd_buffer(2*(chunks(chunk)%field%x_max+5)))
       ! ALLOCATE(chunks(chunk)%top_rcv_buffer(2*(chunks(chunk)%field%x_max+5)))
     !ENDIF
@@ -584,13 +589,13 @@ SUBROUTINE clover_exchange_message(chunk,field,                            &
         IF(chunks(chunk)%chunk_neighbours(chunk_left).NE.external_face) THEN
           receiver=chunks(chunk)%chunk_neighbours(chunk_left)
           right_rcv_buffer(1:size_tot)[receiver] = left_snd_buffer(1:size_tot)
-          event post(ev_left_right[receiver])
+!          event post(ev_left[receiver])
         ENDIF
 
         IF(chunks(chunk)%chunk_neighbours(chunk_right).NE.external_face) THEN
           receiver = chunks(chunk)%chunk_neighbours(chunk_right)
           left_rcv_buffer(1:size_tot)[receiver] = right_snd_buffer(1:size_tot)
-          event post(ev_left_right[receiver])
+!          event post(ev_left[receiver])
         ENDIF
     ENDIF
 
@@ -598,17 +603,12 @@ SUBROUTINE clover_exchange_message(chunk,field,                            &
 #ifdef LOCAL_SYNC
     sync images( chunks(chunk)%imageNeighbours )
 #elif defined(EVENTS_SYNC)
-    block
-      integer :: size_rcv
-      size_rcv = 0
       if(chunks(chunk)%chunk_neighbours(chunk_left).NE.external_face) then
-         size_rcv = size_rcv + 1
+         event wait(ev_left)
       endif
       if(chunks(chunk)%chunk_neighbours(chunk_right).NE.external_face) then
-         size_rcv = size_rcv + 1
+         event wait(ev_right)
       endif
-      event wait(ev_left_right, until_count = size_rcv)
-    end block
 #else
     sync all
 #endif
@@ -660,13 +660,13 @@ SUBROUTINE clover_exchange_message(chunk,field,                            &
         IF(chunks(chunk)%chunk_neighbours(chunk_bottom).NE.external_face) THEN
             receiver=chunks(chunk)%chunk_neighbours(chunk_bottom)
             top_rcv_buffer(1:size_tot)[receiver] = bottom_snd_buffer(1:size_tot)
-            event post(ev_top_bottom[receiver])
+!            event post(ev_top_bottom[receiver])
         ENDIF
 
         IF(chunks(chunk)%chunk_neighbours(chunk_top).NE.external_face) THEN
             receiver=chunks(chunk)%chunk_neighbours(chunk_top)
             bottom_rcv_buffer(1:size_tot)[receiver] = top_snd_buffer(1:size_tot)
-            event post(ev_top_bottom[receiver])
+!            event post(ev_top_bottom[receiver])
         ENDIF
     ENDIF
 
@@ -675,17 +675,12 @@ SUBROUTINE clover_exchange_message(chunk,field,                            &
 #ifdef LOCAL_SYNC
     sync images( chunks(chunk)%imageNeighbours )
 #elif defined(EVENTS_SYNC)
-    block
-      integer :: size_rcv
-      size_rcv = 0
       if(chunks(chunk)%chunk_neighbours(chunk_top).NE.external_face) then
-         size_rcv = size_rcv + 1
+         event wait(ev_top)
       endif
       if(chunks(chunk)%chunk_neighbours(chunk_bottom).NE.external_face) then
-         size_rcv = size_rcv + 1
+         event wait(ev_bottom)
       endif
-      event wait(ev_top_bottom, until_count = size_rcv)
-    end block
 #else
     sync all
 #endif

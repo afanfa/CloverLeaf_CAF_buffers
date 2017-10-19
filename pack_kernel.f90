@@ -23,7 +23,7 @@ MODULE pack_kernel_module
 
   use iso_fortran_env, only : event_type
 
-  type(event_type) :: ev_left_right[*], ev_top_bottom[*]
+  type(event_type) :: ev_left[*], ev_right[*], ev_top[*], ev_bottom[*]
 
 CONTAINS
 
